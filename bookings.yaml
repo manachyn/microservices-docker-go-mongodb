@@ -1,0 +1,69 @@
+namespace: bookings
+bookings:
+  defines: runnable
+  metadata:
+    name: bookings
+    description: >-
+      This is a microservice for managing movie bookings written in Golang. The
+      application uses MongoDB as the database.
+    icon: https://emojiapi.dev/api/v1/robot.svg
+  containers:
+    bookings:
+      build: .
+      image: env-1753.registry.local/bookings:main-02e5d0d
+  services:
+    http:
+      container: bookings
+      port: <- $serverport
+      host-port: <- $serverport
+      publish: false
+      protocol: TCP
+      description: HTTP server network port
+  connections:
+    mongodb:
+      target: bookings/mongodb
+      service: mongodb
+  variables:
+    serveraddr:
+      env: serverAddr
+      type: string
+      description: HTTP server network address
+      value: '!!!SETME!!!'
+    serverport:
+      env: serverPort
+      type: int
+      description: HTTP server network port
+      value: 4000
+    mongouri:
+      env: mongoURI
+      type: string
+      description: Database hostname url
+      value: <- connection-hostname("mongodb")
+    mongodatabase:
+      env: mongoDatabase
+      type: string
+      description: Database name
+      value: bookings
+    enablecredentials:
+      env: enableCredentials
+      type: bool
+      description: Enable the use of credentials for mongo connection
+      value: false
+    mongodb-username:
+      env: MONGODB_USERNAME
+      type: string
+      description: mongoDB username
+      value: '!!!SETME!!!'
+    mongodb-password:
+      env: MONGODB_PASSWORD
+      type: string
+      description: mongoDB password
+      value: '!!!SETME!!!'
+mongodb:
+  defines: runnable
+  inherits: mongodb/mongodb
+stack:
+  defines: group
+  members:
+    - bookings/bookings
+    - bookings/mongodb
