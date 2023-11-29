@@ -1,0 +1,121 @@
+namespace: microservices-docker-go-mongodb
+
+proxy:
+  defines: runnable
+  inherits: nginx/reverse-proxy
+  metadata:
+    name: proxy
+    description: Traefik proxy service for routing requests
+    icon: https://assets.monk.io/icons/nginx-logo-FF65602A76-seeklogo.com.png
+  variables:
+    http-port:
+      type: int
+      value: '80'
+      description: ''
+    proxy-target-host:
+      type: string
+      value: connection-hostname("upstream")
+      description: ''
+    proxy-target-port:
+      type: string
+      value: connection-port("upstream")
+      description: ''
+
+mongodb:
+  defines: runnable
+  inherits: mongodb/mongodb
+  metadata:
+    name: mongodb
+    description: MongoDB database service
+    icon: >-
+      https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA8VbFgxH-i78AZmNqD93mVRkTRd30POqLeCmg9T05ug&s
+  variables:
+    mongo-image:
+      type: string
+      value: latest
+      description: ''
+    mongo-init-database:
+      type: string
+      value: mongo
+      description: ''
+    mongo-init-password:
+      type: string
+      value: password
+      description: ''
+    mongo-init-username:
+      type: string
+      value: mongo
+      description: ''
+    mongodb-image:
+      type: string
+      value: latest
+      description: ''
+
+showtimes:
+  defines: runnable
+  metadata:
+    name: showtimes
+    description: Service for managing show times
+    icon: https://emojiapi.dev/api/v1/robot.svg
+  containers:
+    showtimes:
+      image: env-3057.registry.local/showtimes:main-02e5d0d
+      build: .
+      dockerfile: showtimes/Dockerfile
+  services:
+    http-server-port:
+      description: HTTP server listening port
+      container: showtimes
+      port: $server-port
+      host-port: $server-port
+      publish: true
+      protocol: tcp
+  connections:
+    mongodb-connection:
+      target: microservices-docker-go-mongodb/mongodb
+      service: mongodb
+      optional: true
+      description: Connection to MongoDB database service
+  variables:
+    mongodb-username:
+      env: MONGODB_USERNAME
+      type: string
+      value: mongo
+      description: Username for MongoDB authentication
+    mongodb-password:
+      env: MONGODB_PASSWORD
+      type: string
+      value: password
+      description: Password for MongoDB authentication
+    server-addr:
+      env: SERVER_ADDR
+      type: string
+      value: localhost
+      description: HTTP server network address
+    server-port:
+      env: SERVER_PORT
+      type: int
+      value: 4000
+      description: HTTP server network port
+    mongo-uri:
+      env: MONGO_URI
+      type: string
+      value: <- connection-port("mongodb-connection")
+      description: Database hostname URL
+    mongo-database:
+      env: MONGO_DATABASE
+      type: string
+      value: showtimes
+      description: Database name
+    enable-credentials:
+      env: ENABLE_CREDENTIALS
+      type: bool
+      value: 'false'
+      description: Enable the use of credentials for MongoDB connection
+
+stack:
+  defines: group
+  members:
+    - microservices-docker-go-mongodb/proxy
+    - microservices-docker-go-mongodb/mongodb
+    - microservices-docker-go-mongodb/showtimes
